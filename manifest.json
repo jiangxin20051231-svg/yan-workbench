@@ -1,0 +1,25 @@
+{
+  "name": "盐的工作台",
+  "short_name": "盐工作台",
+  "description": "个人日常管理：日程、待办、阅读、打卡、记账",
+  "start_url": "/yan-workbench/workbench-mobile.html",
+  "display": "standalone",
+  "background_color": "#f4f3f0",
+  "theme_color": "#2f2e2b",
+  "orientation": "portrait",
+  "scope": "/yan-workbench/",
+  "icons": [
+    {
+      "src": "assets/icon-192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

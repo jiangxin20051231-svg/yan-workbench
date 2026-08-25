@@ -3,8 +3,15 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>盐的工作台 · 手机版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f2e2b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="盐工作台" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.jpg" />
+  <link rel="icon" type="image/jpeg" href="assets/favicon.jpg" />
+  <title>盐的工作台 · 手机版</title>
 <style>
   /* ============================================================
      THEME TOKENS — 一处改色，整站换肤（简约·墨色中性默认）
@@ -394,10 +401,22 @@
   .fab { position:fixed; right:18px; bottom:calc(var(--nav-h) + 18px); width:52px; height:52px; border-radius:50%; border:none; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; box-shadow:var(--shadow-overlay); cursor:pointer; z-index:40; transition:transform .12s; }
   .fab:active { transform:scale(.92); }
 
+  /* ---------- save toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(var(--nav-h) + 24px);
+    transform: translateX(-50%) translateY(20px);
+    background: var(--drawer-bg); color: var(--drawer-text);
+    padding: 10px 18px; border-radius: 999px; font-size: 13px;
+    box-shadow: var(--shadow-overlay); opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s; z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
   .hidden { display: none !important; }
 </style>
 </head>
 <body>
+<div id="toast" class="toast">已保存</div>
 <div class="app">
   <div class="topbar">
     <button class="menu-btn" id="btn-menu"></button>
@@ -442,7 +461,7 @@
    图标用 icon 字段（取自下方 ICONS 图标库，全部为单色线性图标）。
    ============================================================ */
 const CONFIG = {
-  storageKey: "workbench-yan-v2",      // 与桌面版共用 key，数据可互通
+  storageKey: "workbench-yan-v3",      // 与桌面版共用 key，数据可互通（升级 v3 清空旧演示数据）
   owner: "盐的工作台",                  // 抽屉顶部标题
   slogan: "Personal Workbench",
   brand: "盐",                          // 抽屉左上角字符标（品牌缩写）
@@ -494,11 +513,7 @@ const CONFIG = {
         { key: "P1", label: "一般", color: "#f6efe6", text: "#bd8a4e" },
         { key: "P2", label: "随手", color: "#eef2ec", text: "#6f8f6a" },
       ],
-      seed: [
-        { id: 11, title: "完成英语核心词汇 30min", priority: "P0", done: false, note: "积累词汇量，稳步提升英语能力" },
-        { id: 12, title: "发布 1 篇笔记 / 视频", priority: "P1", done: false, note: "" },
-        { id: 13, title: "整理今日工作纪要", priority: "P2", done: true, note: "" },
-      ],
+      seed: [],
     },
     {
       key: "schedule", name: "日程表", icon: "calendar", tint: "#eef3ec", color: "var(--module-2)",
@@ -509,65 +524,49 @@ const CONFIG = {
         { key: "cat", label: "分类", type: "select", options: ["学习", "健身"] },
       ],
       seed: [
-        { id: 101, title: "背部训练", content: "周二早上背部训练", mood: "背部", date: "2026-08-18", time: "08:00", cat: "健身" },
-        { id: 102, title: "肩胸训练", content: "周三肩胸训练", mood: "肩胸", date: "2026-08-19", time: "19:00", cat: "健身" },
-        { id: 103, title: "核心训练", content: "周六核心训练", mood: "核心", date: "2026-08-22", time: "16:00", cat: "健身" },
-        { id: 104, title: "臀部训练", content: "今天臀部训练", mood: "臀部", date: "2026-08-23", time: "19:00", cat: "健身" },
-        { id: 105, title: "韩语学习", content: "韩语单词与听力练习", mood: "韩语", date: "2026-08-23", time: "10:00", cat: "学习" },
-        { id: 106, title: "复习总结", content: "整理本周复习笔记", mood: "复习", date: "2026-08-21", time: "20:00", cat: "学习" },
-        { id: 107, title: "剪辑技巧练习", content: "学习剪辑转场与节奏", mood: "剪辑技巧", date: "2026-08-20", time: "14:00", cat: "学习" },
+        { id: 101, title: "背部训练", content: "周二早上背部训练", mood: "背部", date: "2026-08-25", time: "08:00", cat: "健身" },
+        { id: 102, title: "臀部训练", content: "今天臀部训练", mood: "臀部", date: "2026-08-25", time: "19:00", cat: "健身" },
+        { id: 103, title: "核心训练", content: "昨天核心训练", mood: "核心", date: "2026-08-24", time: "16:00", cat: "健身" },
+        { id: 104, title: "肩胸训练", content: "周三肩胸训练", mood: "肩胸", date: "2026-08-26", time: "19:00", cat: "健身" },
+        { id: 105, title: "复习总结", content: "整理复习笔记", mood: "复习", date: "2026-08-25", time: "20:00", cat: "学习" },
+        { id: 106, title: "剪辑技巧练习", content: "学习剪辑转场与节奏", mood: "剪辑技巧", date: "2026-08-26", time: "14:00", cat: "学习" },
+        { id: 107, title: "韩语学习", content: "韩语单词与听力练习", mood: "韩语", date: "2026-08-27", time: "10:00", cat: "学习" },
       ],
     },
     {
       key: "checkin", name: "习惯打卡", icon: "leaf", tint: "#eef3ec", color: "var(--module-1)",
       type: "checkin", desc: "补品·护肤·早睡等每日打卡",
-      seed: [
-        { id: 21, title: "喝够 8 杯水", log: {} },
-        { id: 22, title: "23:30 前睡觉", log: {} },
-        { id: 23, title: "维生素 / 补品", log: {} },
-      ],
+      seed: [],
     },
     {
       key: "read", name: "阅读打卡", icon: "book", tint: "#edf1f5", color: "var(--module-2)",
       type: "progress", unit: "页", desc: "书籍进度·摘录·想法",
       seed: [
-        { id: 31, title: "《认知觉醒》", current: 168, target: 300, unit: "页", note: "第 7 章：习惯的复利" },
-        { id: 32, title: "《原子习惯》", current: 90, target: 260, unit: "页", note: "" },
+        { id: 31, title: "《悉达多》", current: 0, target: 100, unit: "页", note: "" },
       ],
     },
     {
       key: "sport", name: "每日锻炼", icon: "activity", tint: "#f6f0e6", color: "var(--module-3)",
       type: "progress", unit: "分钟", desc: "游泳·跑步·力量训练",
-      seed: [
-        { id: 41, title: "力量训练", current: 12, target: 20, unit: "分钟", note: "20 分钟核心" },
-        { id: 42, title: "跑步", current: 30, target: 40, unit: "分钟", note: "" },
-      ],
+      seed: [],
     },
     {
       key: "money", name: "记账本", icon: "wallet", tint: "#f6efe8", color: "var(--module-4)",
       type: "finance", desc: "收入·支出·分类·占比",
       categories: ["餐饮", "交通", "购物", "居家", "娱乐", "工资", "其他"],
-      seed: [
-        { id: 51, title: "午餐", type: "expense", amount: 32, category: "餐饮", date: isoToday() },
-        { id: 52, title: "地铁", type: "expense", amount: 6, category: "交通", date: isoToday() },
-        { id: 53, title: "稿费", type: "income", amount: 400, category: "工资", date: isoToday() },
-      ],
+      seed: [],
     },
     {
       key: "note", name: "心情日记", icon: "pen", tint: "#f1eef4", color: "var(--module-5)",
       type: "note", desc: "文字·摘录·心情记录",
       moods: ["开心", "平静", "低落", "焦虑", "疲惫"],
-      seed: [
-        { id: 61, title: "今天的小确幸", content: "阳台的多肉冒出了新芽，顺手拍了张照片。", mood: "开心", date: isoToday() },
-      ],
+      seed: [],
     },
     {
       key: "hot", name: "今日热点", icon: "flame", tint: "#f6ece9", color: "var(--danger)",
       type: "note", desc: "热点内容·收藏·稍后阅读",
       moods: ["收藏", "稍后读", "已读"],
-      seed: [
-        { id: 71, title: "AI 提示词技巧合集", content: "整理常用提示词模板，方便复用。", mood: "收藏", date: isoToday() },
-      ],
+      seed: [],
     },
   ],
 };
@@ -628,11 +627,22 @@ const store = {
     CONFIG.modules.forEach(m => d[m.key] = structuredClone(m.seed||[]));
     return d;
   },
-  save(){ localStorage.setItem(CONFIG.storageKey, JSON.stringify(data)); },
+  save(){ localStorage.setItem(CONFIG.storageKey, JSON.stringify(data)); showToast("已保存"); },
 };
 let data = store.load();
 let view = "home";            // home | insight | <moduleKey>
 function persist(){ store.save(); render(); }
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function showToast(msg){
+  const el = $("#toast");
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 1600);
+}
 
 /* ---------- chrome icons ---------- */
 $("#btn-menu").innerHTML = icon("menu", 20);
@@ -1257,6 +1267,13 @@ function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 
 buildDrawer();
 render();
+
+/* ---------- service worker (PWA offline / iOS persistence) ---------- */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js')
+    .then(reg => console.log('SW registered', reg.scope))
+    .catch(err => console.log('SW registration failed', err));
+}
 </script>
 </body>
 </html>
