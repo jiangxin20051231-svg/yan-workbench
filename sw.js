@@ -1,7 +1,8 @@
-const CACHE_NAME = "yan-workbench-v2";
+const CACHE_NAME = "yan-workbench-v3";
 const ASSETS = [
   "/yan-workbench/workbench-mobile.html",
   "/yan-workbench/workbench-desktop.html",
+  "/yan-workbench/daily-focus.html",
   "/yan-workbench/manifest.json",
   "/yan-workbench/sw.js",
   "/yan-workbench/assets/greet-banner.jpg",
