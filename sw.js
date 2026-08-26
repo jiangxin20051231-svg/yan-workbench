@@ -4,6 +4,7 @@ const ASSETS = [
   "/yan-workbench/workbench-desktop.html",
   "/yan-workbench/daily-focus.html",
   "/yan-workbench/manifest.json",
+  "/yan-workbench/manifest-focus.json",
   "/yan-workbench/sw.js",
   "/yan-workbench/assets/greet-banner.jpg",
   "/yan-workbench/assets/icon-192.jpg",

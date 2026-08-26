@@ -2,9 +2,18 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f2e2b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="今日聚焦" />
+  <link rel="manifest" href="manifest-focus.json" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.jpg" />
+  <link rel="icon" type="image/jpeg" href="assets/favicon.jpg" />
   <title>盐 · 今日聚焦</title>
+  <!-- Firebase Realtime Database -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
     :root {
       --page-bg: #f4f3f0;
@@ -241,10 +250,46 @@
       "复盘一下，为下一周留点方向。"
     ];
 
+    /* ---------- Firebase 实时同步配置 ---------- */
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDgZUMexXCcNLdygR9ijczhCEw0vcMdZaI",
+      authDomain: "yan-workbench.firebaseapp.com",
+      databaseURL: "https://yan-workbench-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "yan-workbench",
+      storageBucket: "yan-workbench.firebasestorage.app",
+      messagingSenderId: "196589898588",
+      appId: "1:196589898588:web:3b29fc8e57463104facf99"
+    };
+    let fbRef = null;
+    let fbReady = false;
+    let syncedData = null;
+
+    function initFirebase(){
+      if(!window.firebase) return;
+      if(FIREBASE_CONFIG.apiKey.includes("YOUR")) return;
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        fbRef = firebase.database().ref("workbench/data");
+        fbReady = true;
+        fbRef.on("value", snap => {
+          const val = snap.val();
+          if(!val){
+            const local = loadData();
+            if(local) fbRef.set(local).catch(err => console.error("Firebase init push failed", err));
+            return;
+          }
+          syncedData = val;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(val));
+          render();
+        });
+      } catch(e){ console.error("Firebase init failed", e); }
+    }
+
     function $(s){ return document.querySelector(s); }
     function pad(n){ return String(n).padStart(2,"0"); }
 
     function loadData(){
+      if(syncedData) return syncedData;
       const raw = localStorage.getItem(STORAGE_KEY);
       if(!raw) return null;
       try { return JSON.parse(raw); } catch(e){ return null; }
@@ -345,7 +390,15 @@
       if(e.key === STORAGE_KEY) render();
     });
 
+    initFirebase();
     render();
+
+    // 注册 Service Worker（PWA 离线支持）
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('SW registered', reg.scope))
+        .catch(err => console.log('SW registration failed', err));
+    }
   </script>
 </body>
 </html>

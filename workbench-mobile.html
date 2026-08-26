@@ -12,6 +12,9 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.jpg" />
   <link rel="icon" type="image/jpeg" href="assets/favicon.jpg" />
   <title>盐的工作台 · 手机版</title>
+  <!-- Firebase Realtime Database -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
   /* ============================================================
      THEME TOKENS — 一处改色，整站换肤（简约·墨色中性默认）
@@ -619,6 +622,43 @@ function avgProgress(list){
 const modOf = k => CONFIG.modules.find(m=>m.key===k);
 const $ = s => document.querySelector(s);
 
+/* ---------- Firebase 实时同步配置 ---------- */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDgZUMexXCcNLdygR9ijczhCEw0vcMdZaI",
+  authDomain: "yan-workbench.firebaseapp.com",
+  databaseURL: "https://yan-workbench-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "yan-workbench",
+  storageBucket: "yan-workbench.firebasestorage.app",
+  messagingSenderId: "196589898588",
+  appId: "1:196589898588:web:3b29fc8e57463104facf99"
+};
+let fbRef = null;
+let fbReady = false;
+let fbUpdating = false;   // 防止自环
+
+function initFirebase(){
+  if(!window.firebase) return;
+  if(FIREBASE_CONFIG.apiKey.includes("YOUR")) return;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fbRef = firebase.database().ref("workbench/data");
+    fbReady = true;
+    fbRef.on("value", snap => {
+      const val = snap.val();
+      if(!val){
+        // 云端为空时，把本地数据推上去作为初始数据
+        fbRef.set(data).catch(err => console.error("Firebase init push failed", err));
+        return;
+      }
+      fbUpdating = true;
+      data = val;
+      localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+      render();
+      fbUpdating = false;
+    });
+  } catch(e){ console.error("Firebase init failed", e); }
+}
+
 const store = {
   load(){
     const raw = localStorage.getItem(CONFIG.storageKey);
@@ -627,11 +667,19 @@ const store = {
     CONFIG.modules.forEach(m => d[m.key] = structuredClone(m.seed||[]));
     return d;
   },
-  save(){ localStorage.setItem(CONFIG.storageKey, JSON.stringify(data)); showToast("已保存"); },
+  save(){
+    localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+    showToast("已保存");
+    if(fbReady && fbRef && !fbUpdating){
+      fbRef.set(data).catch(err => console.error("Firebase sync failed", err));
+    }
+  },
 };
 let data = store.load();
 let view = "home";            // home | insight | <moduleKey>
 function persist(){ store.save(); render(); }
+
+initFirebase();
 
 /* ---------- toast ---------- */
 let toastTimer = null;
