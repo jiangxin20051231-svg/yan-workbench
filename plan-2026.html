@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="盐的计划台">
+    <title>盐 · 2026-2030 计划部署台</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-2: #1e1e1e;
+            --text: #ffffff;
+            --text-secondary: #888888;
+            --text-tertiary: #555555;
+            --accent: #ffffff;
+            --success: #4ade80;
+            --radius: 16px;
+            --font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        body { padding: 20px 16px 40px; }
+        .container { max-width: 520px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            padding: 24px 0 32px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .summary-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .summary-card .number {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .summary-card .label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .section {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title::before {
+            content: "";
+            width: 4px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            background: var(--surface-2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .task-item:hover { background: #252525; }
+        .task-item.done { opacity: 0.45; }
+        .task-item.done .task-text { text-decoration: line-through; }
+        .task-check {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--text);
+            border-radius: 6px;
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+            margin-top: 1px;
+        }
+        .task-item.done .task-check {
+            background: var(--text);
+            border-color: var(--text);
+        }
+        .task-item.done .task-check::after {
+            content: "✓";
+            color: var(--bg);
+            font-size: 14px;
+            font-weight: 800;
+        }
+        .task-text { flex: 1; }
+        .task-main {
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .task-note {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .habit-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .habit-item {
+            aspect-ratio: 1;
+            background: var(--surface-2);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.04);
+            padding: 6px;
+        }
+        .habit-item.done { opacity: 0.4; }
+        .habit-icon { font-size: 20px; }
+        .habit-name { font-size: 10px; color: var(--text-secondary); text-align: center; }
+        .progress-item { margin-bottom: 16px; }
+        .progress-item:last-child { margin-bottom: 0; }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .progress-header .value { color: var(--text-secondary); }
+        .progress-bar {
+            height: 8px;
+            background: var(--surface-2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+        .milestone-list {
+            list-style: none;
+        }
+        .milestone-item {
+            display: flex;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .milestone-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .milestone-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+            min-width: 70px;
+            font-weight: 600;
+        }
+        .milestone-content {
+            flex: 1;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .footer {
+            text-align: center;
+            padding: 24px 0;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            line-height: 1.8;
+        }
+        .hidden { display: none; }
+        @media (min-width: 768px) {
+            body { padding: 40px 24px; }
+            .header h1 { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>盐 · 计划部署台</h1>
+            <div class="subtitle" id="todayDate">把计划落到地上</div>
+        </div>
+
+        <div class="summary">
+            <div class="summary-card">
+                <div class="number" id="doneCount">0</div>
+                <div class="label">今日完成</div>
+            </div>
+            <div class="summary-card">
+                <div class="number" id="totalCount">3</div>
+                <div class="label">核心任务</div>
+            </div>
+            <div class="summary-card">
+                <div class="number" id="streakCount">0</div>
+                <div class="label">连续打卡</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">今日三件事</div>
+            <div id="taskList"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">每日习惯</div>
+            <div class="habit-grid" id="habitList"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">长期进度</div>
+            <div id="progressList"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">关键里程碑</div>
+            <ul class="milestone-list">
+                <li class="milestone-item">
+                    <div class="milestone-date">2026.12</div>
+                    <div class="milestone-content">主攻英语四级，完成词汇一轮 + 真题阅读训练</div>
+                </li>
+                <li class="milestone-item">
+                    <div class="milestone-date">2027.01</div>
+                    <div class="milestone-content">携带作品集找老师/朋友，申请上半年影楼拍摄/实习岗位</div>
+                </li>
+                <li class="milestone-item">
+                    <div class="milestone-date">2027.06</div>
+                    <div class="milestone-content">通过英语四级；了解专升本常识；启动专升本核心科目复习</div>
+                </li>
+                <li class="milestone-item">
+                    <div class="milestone-date">2027.07-08</div>
+                    <div class="milestone-content">重庆考驾照、计算机二级；停止体力兼职；开启剪辑/摄影接单</div>
+                </li>
+                <li class="milestone-item">
+                    <div class="milestone-date">2028</div>
+                    <div class="milestone-content">考过韩语 3 级；持续积累作品集与行业人脉</div>
+                </li>
+                <li class="milestone-item">
+                    <div class="milestone-date">2029-2030</div>
+                    <div class="milestone-content">完成本科学业；申请韩国影视类研究生</div>
+                </li>
+                <li class="milestone-item">
+                    <div class="milestone-date">未来 10 年</div>
+                    <div class="milestone-content">建立个人工作室与经济店铺，学习理财、金融、推销</div>
+                </li>
+            </ul>
+        </div>
+
+        <button class="btn" id="checkInBtn">今日打卡</button>
+
+        <div class="footer">
+            极简消费 · 现金控惨 · 先落地再完美<br>
+            数据仅保存在当前浏览器
+        </div>
+    </div>
+
+    <script>
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('todayDate').textContent = today + ' · 把计划落到地上';
+
+        const tasks = [
+            { id: 'task1', main: '背单词 30 个', note: '碎片时间 + 20:30 后复习' },
+            { id: 'task2', main: '四级真题阅读 1 篇', note: '20:30–23:30 核心学习块' },
+            { id: 'task3', main: '20:30–23:30 固定学习', note: '洗漱后立即开始，雷打不动' }
+        ];
+
+        const habits = [
+            { id: 'habit1', icon: '💧', name: '早起喝水' },
+            { id: 'habit2', icon: '📖', name: '碎片背单词' },
+            { id: 'habit3', icon: '💰', name: '记账审查' },
+            { id: 'habit4', icon: '🌙', name: '23:30 前睡' }
+        ];
+
+        const progressItems = [
+            { id: 'prog1', name: '四级词汇', current: 5, total: 100 },
+            { id: 'prog2', name: '四级真题', current: 0, total: 100 },
+            { id: 'prog3', name: '作品集', current: 60, total: 100 },
+            { id: 'prog4', name: '相机基金', current: 20, total: 100 },
+            { id: 'prog5', name: '韩语', current: 0, total: 100 },
+            { id: 'prog6', name: '专升本', current: 0, total: 100 }
+        ];
+
+        function getStorage(key, def) {
+            try {
+                const val = localStorage.getItem(key);
+                return val ? JSON.parse(val) : def;
+            } catch { return def; }
+        }
+        function setStorage(key, val) {
+            try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+        }
+
+        let taskState = getStorage('taskState_' + today, {});
+        let habitState = getStorage('habitState_' + today, {});
+        let progressState = getStorage('progressState', {});
+        let streak = getStorage('streak', 0);
+        let lastCheckIn = getStorage('lastCheckIn', '');
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            tasks.forEach(t => {
+                const done = !!taskState[t.id];
+                const el = document.createElement('div');
+                el.className = 'task-item' + (done ? ' done' : '');
+                el.innerHTML = `
+                    <div class="task-check"></div>
+                    <div class="task-text">
+                        <div class="task-main">${t.main}</div>
+                        <div class="task-note">${t.note}</div>
+                    </div>
+                `;
+                el.onclick = () => {
+                    taskState[t.id] = !taskState[t.id];
+                    setStorage('taskState_' + today, taskState);
+                    renderTasks();
+                    updateSummary();
+                };
+                list.appendChild(el);
+            });
+        }
+
+        function renderHabits() {
+            const list = document.getElementById('habitList');
+            list.innerHTML = '';
+            habits.forEach(h => {
+                const done = !!habitState[h.id];
+                const el = document.createElement('div');
+                el.className = 'habit-item' + (done ? ' done' : '');
+                el.innerHTML = `
+                    <div class="habit-icon">${h.icon}</div>
+                    <div class="habit-name">${h.name}</div>
+                `;
+                el.onclick = () => {
+                    habitState[h.id] = !habitState[h.id];
+                    setStorage('habitState_' + today, habitState);
+                    renderHabits();
+                };
+                list.appendChild(el);
+            });
+        }
+
+        function renderProgress() {
+            const list = document.getElementById('progressList');
+            list.innerHTML = '';
+            progressItems.forEach(p => {
+                const current = progressState[p.id] !== undefined ? progressState[p.id] : p.current;
+                const pct = Math.round((current / p.total) * 100);
+                const el = document.createElement('div');
+                el.className = 'progress-item';
+                el.innerHTML = `
+                    <div class="progress-header">
+                        <span>${p.name}</span>
+                        <span class="value" data-id="${p.id}">${current}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${pct}%"></div>
+                    </div>
+                `;
+                el.querySelector('.value').onclick = () => {
+                    const nv = prompt(`修改 ${p.name} 进度（0-100）：`, current);
+                    if (nv !== null && !isNaN(nv)) {
+                        const val = Math.max(0, Math.min(100, parseInt(nv)));
+                        progressState[p.id] = val;
+                        setStorage('progressState', progressState);
+                        renderProgress();
+                    }
+                };
+                list.appendChild(el);
+            });
+        }
+
+        function updateSummary() {
+            const done = Object.values(taskState).filter(v => v).length;
+            document.getElementById('doneCount').textContent = done;
+            document.getElementById('streakCount').textContent = streak;
+        }
+
+        document.getElementById('checkInBtn').onclick = () => {
+            const done = Object.values(taskState).filter(v => v).length;
+            if (done < 2) {
+                alert('先完成至少 2 项核心任务再打卡哦');
+                return;
+            }
+            if (lastCheckIn !== today) {
+                streak = (lastCheckIn === getYesterday()) ? streak + 1 : 1;
+                lastCheckIn = today;
+                setStorage('streak', streak);
+                setStorage('lastCheckIn', lastCheckIn);
+                updateSummary();
+                alert('今日打卡成功！连续 ' + streak + ' 天');
+            } else {
+                alert('今天已经打卡啦，明天继续');
+            }
+        };
+
+        function getYesterday() {
+            const d = new Date();
+            d.setDate(d.getDate() - 1);
+            return d.toISOString().split('T')[0];
+        }
+
+        renderTasks();
+        renderHabits();
+        renderProgress();
+        updateSummary();
+    </script>
+</body>
+</html>
