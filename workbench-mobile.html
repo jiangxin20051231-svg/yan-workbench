@@ -539,7 +539,12 @@ const CONFIG = {
     {
       key: "checkin", name: "习惯打卡", icon: "leaf", tint: "#eef3ec", color: "var(--module-1)",
       type: "checkin", desc: "补品·护肤·早睡等每日打卡",
-      seed: [],
+      seed: [
+        { id: 201, title: "喝水8杯", log: {} },
+        { id: 202, title: "护肤", log: {} },
+        { id: 203, title: "早睡", log: {} },
+        { id: 204, title: "阅读30分钟", log: {} },
+      ],
     },
     {
       key: "read", name: "阅读打卡", icon: "book", tint: "#edf1f5", color: "var(--module-2)",
@@ -676,8 +681,20 @@ const store = {
   },
 };
 let data = store.load();
+carryOverTodos();
 let view = "home";            // home | insight | <moduleKey>
 function persist(){ store.save(); render(); }
+function carryOverTodos(){
+  const t = today();
+  if(data.__lastTodoDay === t) return;
+  const todos = data.todo || [];
+  todos.forEach(x => {
+    if(!x.date) x.date = t;
+    if(!x.done && x.date < t){ x.overdue = true; x.date = t; }
+  });
+  data.__lastTodoDay = t;
+  localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+}
 
 initFirebase();
 
@@ -889,7 +906,7 @@ function wireHome(){
   // 置顶卡：就地打卡 / 完成
   $("#screen").querySelectorAll(".js-pin-chk").forEach(el=>el.onclick=e=>{
     e.stopPropagation(); const m=modOf(el.dataset.mkey), x=find(el); if(!x) return;
-    if(m.type==="todo"){ x.done=!x.done; }
+    if(m.type==="todo"){ x.done=!x.done; if(x.done) x.overdue=false; }
     else if(m.type==="checkin"){ x.log=x.log||{}; const t=today(); x.log[t]?delete x.log[t]:x.log[t]=true; }
     persist();
   });
@@ -1024,7 +1041,7 @@ function recHTML(m,x){
       <div class="chk js-chk ${x.done?'on':''}" data-id="${x.id}">${chkMark}</div>
       ${thumb}
       <div class="body" data-edit="${x.id}"><div class="rname ${x.done?'done':''}">${esc(x.title)}</div>
-      <div class="rmeta">${p?`<span class="badge" style="background:${p.color};color:${p.text}"><span class="dot"></span>${p.label}</span>`:''}</div>
+      <div class="rmeta">${x.overdue&&!x.done?'<span class="badge" style="background:#f6ece9;color:#c25d4f"><span class="dot"></span>顺延</span>':''}${p?`<span class="badge" style="background:${p.color};color:${p.text}"><span class="dot"></span>${p.label}</span>`:''}</div>
       ${x.note?`<div class="rnote">${esc(x.note)}</div>`:''}${customBlock}</div></div></div>`;
   }
   if(m.type==="checkin"){
@@ -1067,7 +1084,7 @@ function wireModule(key){
   const m=modOf(key);
   $("#screen").querySelectorAll(".js-chk").forEach(el=>el.onclick=e=>{
     e.stopPropagation(); const x=(data[key]).find(i=>i.id==el.dataset.id);
-    if(m.type==="todo"){ x.done=!x.done; }
+    if(m.type==="todo"){ x.done=!x.done; if(x.done) x.overdue=false; }
     else if(m.type==="checkin"){ x.log=x.log||{}; const t=today(); x.log[t]?delete x.log[t]:x.log[t]=true; }
     persist();
   });
@@ -1166,7 +1183,7 @@ function openEditor(key, item){
 function newItem(m){
   const base={ id: Date.now() };
   let item;
-  if(m.type==="todo") item={...base, title:"", priority:(m.priorities&&m.priorities[1]?m.priorities[1].key:"P1"), done:false, note:""};
+  if(m.type==="todo") item={...base, title:"", priority:(m.priorities&&m.priorities[1]?m.priorities[1].key:"P1"), done:false, note:"", date: isoToday(), overdue: false};
   else if(m.type==="checkin") item={...base, title:"", log:{}};
   else if(m.type==="progress") item={...base, title:"", current:0, target: (m.unit==="页"?100:20), unit:m.unit||"", note:""};
   else if(m.type==="finance") item={...base, title:"", type:"expense", amount:"", category:(m.categories&&m.categories[0])||"其他", date:isoToday()};
