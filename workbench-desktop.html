@@ -626,7 +626,7 @@ const CONFIG = {
     { key:"checkin", label:"打卡", icon:"leaf", color:"var(--module-1)",
       calc: d => { const it=d.checkin||[]; const t=today(); const done=it.filter(x=>x.log&&x.log[t]).length; return { value: it.length?Math.round(done/it.length*100):0, sub:`${done}/${it.length} 项` }; } },
     { key:"read", label:"阅读", icon:"book", color:"var(--module-2)", calc: d => avgProgress(d.read) },
-    { key:"sport", label:"运动", icon:"activity", color:"var(--module-3)", calc: d => avgProgress(d.sport) },
+    { key:"sport", label:"运动", icon:"activity", color:"var(--module-3)", calc: d => { const n=(d.sport||[]).length; return { value: 0, sub: `${n} 次记录` }; } },
   ],
 
   // 本周状态趋势（真实数据：读取用户填写的 __trend，7 个数字；没有就留空）
@@ -662,7 +662,12 @@ const CONFIG = {
       seed:[ {id:201,title:"喝水8杯",log:{}}, {id:202,title:"护肤",log:{}}, {id:203,title:"早睡",log:{}}, {id:204,title:"阅读30分钟",log:{}} ] },
     { key:"read", name:"阅读打卡", icon:"book", tint:"#edf1f5", color:"var(--module-2)", type:"progress", unit:"页", desc:"书籍进度·摘录·想法",
       seed:[ {id:31,title:"《悉达多》",current:0,target:100,unit:"页",note:""} ] },
-    { key:"sport", name:"每日锻炼", icon:"activity", tint:"#f6f0e6", color:"var(--module-3)", type:"progress", unit:"分钟", desc:"游泳·跑步·力量训练",
+    { key:"sport", name:"每日锻炼", icon:"activity", tint:"#f6f0e6", color:"var(--module-3)", type:"note", desc:"游泳·跑步·力量训练 · 每次一条带日期记录",
+      moods:["背部","核心","肩胸","臀部","有氧","游泳","跑步"],
+      fields:[
+        {key:"duration",label:"时长",type:"text",placeholder:"45分钟"},
+        {key:"intensity",label:"强度",type:"select",options:["低","中","高"]}
+      ],
       seed:[] },
     { key:"money", name:"记账本", icon:"wallet", tint:"#f6efe8", color:"var(--module-4)", type:"finance", desc:"收入·支出·分类·占比",
       categories:["餐饮","交通","购物","居家","娱乐","工资","其他"],
@@ -1001,16 +1006,16 @@ function booksTileHTML(){
     <div class="book-list">${rows}</div></div>`;
 }
 
-/* 本周目标：sport (progress) 各项进度条 */
+/* 最近运动：sport (note) 最近5条记录 */
 function goalsTileHTML(){
-  const all=data.sport||[]; const colors=["var(--module-3)","var(--module-1)","var(--module-2)","var(--module-4)","var(--module-5)"];
-  const rows=all.length? all.map((x,i)=>{ const pct=Math.min(100,Math.round((x.current/x.target)*100||0)); const col=colors[i%colors.length];
-    return `<div class="book-row"><span class="spine" style="background:${col}">${icon("activity",16)}</span>
-      <div class="bmid"><div class="btt">${pct>=100?`<span style="color:var(--module-1);display:inline-flex;vertical-align:-2px;margin-right:3px">${icon("check",13,2.6)}</span>`:''}${esc(x.title)}</div>
-        <div class="bsub">${x.current}/${x.target} ${x.unit||'次'}</div>
-        <div class="bbar"><i style="width:${pct}%;background:${col}"></i></div></div><span class="bpct" style="color:${col}">${pct}%</span></div>`; }).join("")
-    : `<div class="focus-empty">还没有锻炼目标，去「每日锻炼」添加吧</div>`;
-  return `<div class="tile b4"><div class="tile-h"><span class="tic">${icon("activity",16)}</span><div class="tt"><span class="en">WEEKLY GOALS</span><span class="zh">本周目标</span></div><span class="r js-open" data-open="sport">${all.length} 项</span></div>
+  const all=(data.sport||[]).slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,5);
+  const colors=["var(--module-3)","var(--module-1)","var(--module-2)","var(--module-4)","var(--module-5)"];
+  const rows=all.length? all.map((x,i)=>{ const col=colors[i%colors.length];
+    return `<div class="book-row js-open" data-open="sport"><span class="spine" style="background:${col}">${icon("activity",16)}</span>
+      <div class="bmid"><div class="btt">${esc(x.title||'运动')}</div>
+        <div class="bsub">${x.date||''} · ${x.duration||''} · ${x.intensity?x.intensity+'强度':''} · ${x.mood||''}</div></div></div>`; }).join("")
+    : `<div class="focus-empty">还没有运动记录，去「每日锻炼」添加吧</div>`;
+  return `<div class="tile b4"><div class="tile-h"><span class="tic">${icon("activity",16)}</span><div class="tt"><span class="en">RECENT WORKOUTS</span><span class="zh">最近运动</span></div><span class="r js-open" data-open="sport">${data.sport?data.sport.length:0} 条</span></div>
     <div class="book-list">${rows}</div></div>`;
 }
 
@@ -1126,7 +1131,9 @@ function renderModule(key){
   $("#screen").innerHTML=`<div class="header"><div><h2>${m.name}</h2><p>${m.desc}</p></div><div class="spacer"></div><span class="date-chip">${icon("calendar",14)} ${dateStr()}</span></div>
     <div class="toolbar">
       <div class="search-box">${icon("search",15,2.2)}<input id="search" placeholder="搜索…" value="${attr(searchQ)}"/></div>
-      <div class="spacer"></div><button class="btn" id="btn-new">${icon("plus",16,2.2)}新建</button></div>
+      <div class="spacer"></div>
+      ${m.type==="finance"?`<button class="btn ghost" id="btn-import" style="margin-right:8px">${icon("list",16,2.2)}导入 CSV</button>`:""}
+      <button class="btn" id="btn-new">${icon("plus",16,2.2)}新建</button></div>
     ${head}
     <div class="mod-layout">
       <div class="mod-main">
@@ -1142,6 +1149,7 @@ function renderModule(key){
   s.addEventListener("compositionend",()=>{ composing=false; refresh(); });
   s.addEventListener("input",()=>{ if(!composing) refresh(); });
   $("#btn-new").onclick=()=>openEditor(key,null);
+  const imp=$("#btn-import"); if(imp) imp.onclick=()=>openImportCSV(key);
   wireModule(key);
 }
 
@@ -1401,6 +1409,58 @@ function newItem(m){ const base={id:Date.now()}; let item;
   // initialize custom fields
   (m.fields||[]).forEach(f=>{ if(!(f.key in item)) item[f.key]= f.type==="select"?(f.options&&f.options[0]||""):""; });
   return item;
+}
+
+function openImportCSV(key){
+  const m=modOf(key);
+  const overlay=document.createElement("div"); overlay.className="overlay";
+  overlay.innerHTML=`<div class="modal"><div class="grab"></div>
+    <h2>批量导入 · ${m.name}</h2>
+    <div class="sub">从微信钱包 → 账单 → 常见问题 → 下载账单 → 用于个人对账，导出 CSV 后复制内容粘贴到这里。只导入「支出」记录。</div>
+    <div class="field"><label>粘贴 CSV 内容</label><textarea id="f-csv" rows="12" placeholder="交易时间,交易类型,交易对方,商品,收/支,金额(元),..." style="font-size:12px;width:100%"></textarea></div>
+    <div class="field"><label>默认分类映射（可改）</label><div id="csv-cat-hint" style="font-size:12px;color:var(--text-secondary);line-height:1.5"></div></div>
+    <div class="modal-actions"><button class="btn ghost" id="m-cancel">取消</button><button class="btn" id="m-preview">预览</button><button class="btn" id="m-import" style="display:none">确认导入</button></div>
+    <div id="csv-preview" style="margin-top:12px;max-height:240px;overflow:auto"></div></div>`;
+  document.body.appendChild(overlay);
+  const close=()=>overlay.remove();
+  overlay.onclick=e=>{ if(e.target===overlay) close(); };
+  overlay.querySelector("#m-cancel").onclick=close;
+  const cats=m.categories||["餐饮","交通","购物","居家","娱乐","工资","其他"];
+  const keywords={"餐饮":["餐","饭","吃","外卖","奶茶","咖啡","超市","便利店","美团","饿了么","肯德基","麦当劳","星巴克","烧烤","火锅","面","饺"],"交通":["地铁","公交","打车","滴滴","高铁","火车","机票","油费","停车","高速","共享单车","骑行"],"购物":["淘宝","京东","拼多多","天猫","唯品会","服饰","鞋","包","美妆","护肤品","化妆品","百货"],"居家":["房租","水电","物业","燃气","宽带","话费","话费充值","保洁","维修","家居","宜家","超市"],"娱乐":["视频","会员","爱奇艺","腾讯","优酷","哔哩","B站","音乐","网易云","游戏","Steam","电影票","演出","彩票"],"工资":["工资","奖金","报销","转账-来自","红包-来自"]};
+  overlay.querySelector("#csv-cat-hint").innerHTML=Object.entries(keywords).map(([k,arr])=>`<b>${k}</b>：${arr.slice(0,6).join("、")}…`).join("<br>");
+  let parsed=[];
+  function guessCat(row){
+    const text=`${row.merchant||""} ${row.product||""} ${row.note||""}`;
+    for(const [cat,arr] of Object.entries(keywords)){ if(arr.some(w=>text.includes(w))) return cat; }
+    return "其他";
+  }
+  function parseCSV(text){
+    const lines=text.trim().split(/\r?\n/); if(lines.length<2) return [];
+    const header=lines[0].split(",").map(h=>h.trim().replace(/^\uFEFF/,""));
+    const idx={time:header.findIndex(h=>/交易时间/.test(h)), type:header.findIndex(h=>/收\/支/.test(h)), merchant:header.findIndex(h=>/交易对方/.test(h)), product:header.findIndex(h=>/商品/.test(h)), amount:header.findIndex(h=>/金额/.test(h)), note:header.findIndex(h=>/备注/.test(h))};
+    if(idx.type===-1) return [];
+    const out=[];
+    for(let i=1;i<lines.length;i++){
+      const cols=lines[i].split(",");
+      const t=idx.type===-1?"":cols[idx.type];
+      if(t!=="支出") continue;
+      const amt=cols[idx.amount]||"0"; const clean=amt.replace(/[¥,]/g,"").trim();
+      const date=(cols[idx.time]||"").split(" ")[0].replace(/\//g,"-");
+      out.push({title:(cols[idx.merchant]||"未命名").trim(), category:guessCat({merchant:cols[idx.merchant]||"",product:cols[idx.product]||"",note:cols[idx.note]||""}), amount:+clean||0, date: date||isoToday(), type:"expense", note:(cols[idx.product]||"").trim()});
+    }
+    return out;
+  }
+  overlay.querySelector("#m-preview").onclick=()=>{
+    const raw=overlay.querySelector("#f-csv").value; parsed=parseCSV(raw);
+    if(!parsed.length){ overlay.querySelector("#csv-preview").innerHTML="<div style='color:var(--danger);font-size:13px'>没有解析到支出记录，请检查 CSV 格式</div>"; overlay.querySelector("#m-import").style.display="none"; return; }
+    overlay.querySelector("#csv-preview").innerHTML=`<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">共 ${parsed.length} 条，将导入为支出</div>`+parsed.slice(0,30).map(x=>`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>${x.date} · ${x.title}</span><span>${x.category} · ¥${x.amount}</span></div>`).join("")+(parsed.length>30?`<div style="font-size:12px;color:var(--text-secondary);padding-top:6px">…还有 ${parsed.length-30} 条</div>`:"");
+    overlay.querySelector("#m-import").style.display="inline-flex";
+  };
+  overlay.querySelector("#m-import").onclick=()=>{
+    const arr=data[key]=data[key]||[];
+    parsed.forEach(x=>arr.unshift({id:Date.now()+Math.floor(Math.random()*1000000),title:x.title,type:"expense",amount:x.amount,category:x.category,date:x.date,note:x.note}));
+    persist(); close();
+  };
 }
 
 /* ---------- delete confirm ---------- */

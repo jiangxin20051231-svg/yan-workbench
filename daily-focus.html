@@ -176,6 +176,35 @@
     .habit-check:hover { border-color: var(--accent); }
     .habit-check.done { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
+    .workout-list { display: flex; flex-direction: column; gap: 10px; }
+    .workout {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border-radius: 12px;
+      border-left: 4px solid var(--fitness);
+    }
+    .workout-date {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      min-width: 58px;
+    }
+    .workout-body { flex: 1; min-width: 0; }
+    .workout-title { font-size: 14px; font-weight: 700; }
+    .workout-meta { font-size: 12px; color: var(--text-secondary); }
+    .workout-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--fitness);
+      flex-shrink: 0;
+    }
+
     .refresh {
       position: absolute;
       top: 18px;
@@ -234,6 +263,11 @@
         <div class="panel" id="habitPanel"></div>
       </section>
     </div>
+
+    <section id="workoutSec">
+      <div class="sec-title"><span class="dot" style="background:var(--fitness)"></span>最近运动</div>
+      <div class="panel" id="workoutPanel"></div>
+    </section>
 
     <div class="footer" id="quote"></div>
   </div>
@@ -372,6 +406,24 @@
             <span class="habit-check ${h.done ? "done" : ""}">${h.done ? "✓" : ""}</span>
             <span>${escapeHtml(h.title)}</span>
           </label>
+        `).join("")}</div>`;
+      }
+
+      // 最近运动
+      const sports = Array.isArray(data.sport) ? data.sport : [];
+      if(sports.length === 0){
+        $("#workoutPanel").innerHTML = '<div class="empty">暂无运动记录</div>';
+      } else {
+        const recent = sports.slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,3);
+        $("#workoutPanel").innerHTML = `<div class="workout-list">${recent.map(w => `
+          <div class="workout">
+            <div class="workout-date">${escapeHtml(w.date||"--")}</div>
+            <div class="workout-body">
+              <div class="workout-title">${escapeHtml(w.title||"运动")}</div>
+              <div class="workout-meta">${escapeHtml(w.duration||"--")} · ${escapeHtml(w.intensity||"--")}强度</div>
+            </div>
+            <div class="workout-tag">${escapeHtml(w.mood||"运动")}</div>
+          </div>
         `).join("")}</div>`;
       }
     }
